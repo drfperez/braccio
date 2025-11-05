@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora de Dinàmica Robòtica</title>
+
+  <!-- MathJax 3 -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$']] },
+      options: { renderActions: { addMenu: [] } },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6fbff;
+      --card: #fff;
+      --primary: #0b3b4a;
+      --muted: #5b6b73;
+    }
+
+    body {
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      margin: 18px;
+      background: linear-gradient(180deg, #f7fbff, #eaf6ff);
+      color: var(--primary);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(12,40,50,0.06);
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    input[type=number], select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #e6eef6;
+    }
+
+    .debug {
+      background: #fbfdff;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px dashed #e6eef6;
+      font-family: monospace;
+    }
+
+    .math {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #eef6fb;
+      overflow-x: auto;
+      word-wrap: break-word;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button.primary {
+      background: #1b95d1;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    button.primary:hover {
+      background: #117bb3;
+    }
+
+    .small {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #eef4fb;
+      background: white;
+      cursor: pointer;
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .steps {
+      background: #fbfdff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #eef4fb;
+      overflow-x: auto;
+      word-wrap: break-word;
+      min-height: 120px;
+    }
+
+    details summary {
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      body { margin: 10px; }
+      .card { padding: 12px; }
+      input, select, button { font-size: 15px; }
+      h1 { font-size: 1.4rem; }
+      h2, h3 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="card">
+      <h1 style="margin:0">Calculadora de Dinàmica Robòtica</h1>
+      <div class="muted">Robot planar de 2 graus de llibertat</div>
+    </header>
+
+    <details style="margin:16px 0;background:#eef5fb;padding:12px 16px;border-radius:8px;">
+      <summary><strong>🧠 Conceptes de robòtica dinàmica</strong></summary>
+      <p>
+        La <strong>dinàmica</strong> estudia com les <em>forces i moments</em> generen moviments. 
+        Mentre la <em>cinemàtica</em> descriu el moviment, la dinàmica el relaciona amb masses i inèrcies.
+      </p>
+      <ul>
+        <li><strong>Matriu d’inèrcia M(q):</strong> relació entre masses i acceleracions.</li>
+        <li><strong>Termes de Coriolis i centrífugs C(q,q̇):</strong> forces dinàmiques per moviments combinats.</li>
+        <li><strong>Vector de gravetat g(q):</strong> efecte del pes sobre cada articulació.</li>
+        <li><strong>Moments τ:</strong> esforços motors necessaris per generar o compensar moviments.</li>
+      </ul>
+      <div class="math">$$\tau = M(q)\ddot q + C(q,\dot q)\dot q + g(q)$$</div>
+    </details>
+
+    <section class="card">
+      <h2>Paràmetres</h2>
+
+      <div style="display:grid;gap:8px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>a₁ (m)</label><input id="a1" type="number" step="0.01" value="1.0"></div>
+          <div style="flex:1"><label>a₂ (m)</label><input id="a2" type="number" step="0.01" value="0.6"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>m₁ (kg)</label><input id="m1" type="number" step="0.01" value="2.0"></div>
+          <div style="flex:1"><label>m₂ (kg)</label><input id="m2" type="number" step="0.01" value="1.0"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>r₁ (m)</label><input id="r1" type="number" step="0.01" value="0.45"></div>
+          <div style="flex:1"><label>r₂ (m)</label><input id="r2" type="number" step="0.01" value="0.3"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>I₁ (kg·m²)</label><input id="I1" type="number" step="0.0001" value="0.02"></div>
+          <div style="flex:1"><label>I₂ (kg·m²)</label><input id="I2" type="number" step="0.0001" value="0.01"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>g (m/s²)</label><input id="gval" type="number" step="0.01" value="9.81"></div>
+          <div style="flex:1"><label>Unitats angles</label><select id="angle-unit"><option value="deg">graus</option><option value="rad">radians</option></select></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:14px">Estat instantani</h3>
+      <div style="display:grid;gap:8px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>q₁</label><input id="q1" type="number" step="0.01" value="30"></div>
+          <div style="flex:1"><label>q₂</label><input id="q2" type="number" step="0.01" value="45"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>q̇₁ (rad/s)</label><input id="q1_dot" type="number" step="0.01" value="0.5"></div>
+          <div style="flex:1"><label>q̇₂ (rad/s)</label><input id="q2_dot" type="number" step="0.01" value="0.8"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label>q̈₁ (rad/s²)</label><input id="q1_ddot" type="number" step="0.01" value="0"></div>
+          <div style="flex:1"><label>q̈₂ (rad/s²)</label><input id="q2_ddot" type="number" step="0.01" value="0"></div>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:12px">
+        <button id="computeAll" class="primary">Calcular</button>
+        <button id="resetBtn" class="small">Restablir</button>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Moments de forces externs τ (opcional)</label>
+        <div style="display:flex;gap:8px">
+          <input id="tau1_in" type="number" step="0.01" value="0">
+          <input id="tau2_in" type="number" step="0.01" value="0">
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px">Resultats i passos</h3>
+      <div id="results" class="steps muted">
+        Prem "Calcular" per veure les matrius i els passos.
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Fórmules</h3>
+      <div class="math">
+        $$\tau = M(q)\ddot q + C(q,\dot q)\dot q + g(q)$$
+        <br>
+        $$M_{11}=I_1+I_2+m_1 r_1^2 + m_2(a_1^2 + r_2^2 + 2 a_1 r_2 \cos q_2)$$
+        $$M_{12}=I_2 + m_2(r_2^2 + a_1 r_2 \cos q_2),\quad M_{22}=I_2 + m_2 r_2^2$$
+        $$C(q,\dot q)=\begin{bmatrix} h\dot q_2 & h(\dot q_1+\dot q_2)\\ -h\dot q_1 & 0 \end{bmatrix},\quad h=-m_2 a_1 r_2 \sin q_2$$
+        $$g_1=(m_1 r_1 + m_2 a_1) g \cos q_1 + m_2 r_2 g \cos(q_1+q_2),\quad g_2 = m_2 r_2 g \cos(q_1+q_2)$$
+      </div>
+    </section>
+  </div>
+
+  <script>
+  // Conversió i format
+  function degToRad(d){return d*Math.PI/180}
+  function fmt(n,d=4){return Number(n).toFixed(d)}
+
+  function q(id){return document.querySelector(id)}
+  const els = ['a1','a2','m1','m2','r1','r2','I1','I2','gval','angle-unit',
+               'q1','q2','q1_dot','q2_dot','q1_ddot','q2_ddot'];
+  const E={}; els.forEach(x=>E[x]=q('#'+x));
+
+  // Llegeix dades
+  function readInputs(){
+    const p={};
+    for(const k of ['a1','a2','m1','m2','r1','r2','I1','I2','gval',
+                    'q1','q2','q1_dot','q2_dot','q1_ddot','q2_ddot']){
+      p[k]=Number(E[k].value);
+    }
+    if(E['angle-unit'].value==='deg'){
+      p.q1=degToRad(p.q1); p.q2=degToRad(p.q2);
+    }
+    p.g=p.gval;
+    return p;
+  }
+
+  // Càlcul dinàmic
+  function computeAll(p){
+    const {a1,a2,m1,m2,r1,r2,I1,I2,g,q1,q2,q1_dot,q2_dot,q1_ddot,q2_ddot}=p;
+    const c2=Math.cos(q2), s2=Math.sin(q2);
+    const h=-m2*a1*r2*s2;
+
+    // Matriu M
+    const M11=I1+I2+m1*r1**2+m2*(a1**2+r2**2+2*a1*r2*c2);
+    const M12=I2+m2*(r2**2+a1*r2*c2);
+    const M22=I2+m2*r2**2;
+    const M=[[M11,M12],[M12,M22]];
+
+    // Matriu C
+    const C=[[h*q2_dot,h*(q1_dot+q2_dot)],[-h*q1_dot,0]];
+
+    // Vector gravetat
+    const g1=(m1*r1+m2*a1)*g*Math.cos(q1)+m2*r2*g*Math.cos(q1+q2);
+    const g2=m2*r2*g*Math.cos(q1+q2);
+    const G=[g1,g2];
+
+    // τ = M*qdd + C*qdot + g
+    const Mqdd=[M11*q1_ddot+M12*q2_ddot, M12*q1_ddot+M22*q2_ddot];
+    const Cqdot=[C[0][0]*q1_dot+C[0][1]*q2_dot, C[1][0]*q1_dot+C[1][1]*q2_dot];
+    const tau=[Mqdd[0]+Cqdot[0]+g1, Mqdd[1]+Cqdot[1]+g2];
+
+    return {c2,s2,h,M,C,G,Mqdd,Cqdot,tau};
+  }
+
+  // Renderitza amb MathJax
+  async function renderLatex(id,latex){
+    const el=document.getElementById(id);
+    el.innerHTML=latex;
+    if(window.MathJax && MathJax.typesetPromise){
+      await MathJax.typesetPromise([el]);
+    }
+  }
+
+  // Quan es clica "Calcular"
+  document.getElementById('computeAll').addEventListener('click', async ()=>{
+    const p=readInputs();
+    const r=computeAll(p);
+    const res=document.getElementById('results');
+    res.classList.remove('muted');
+
+    let out=[];
+
+    // 1️⃣ Valors bàsics
+    out.push(`\\textbf{1️⃣ Components trigonomètriques i h:}`);
+    out.push(`c_2 = \\cos(q_2) = ${fmt(r.c2)},\\quad s_2 = \\sin(q_2) = ${fmt(r.s2)},\\quad h = -m_2 a_1 r_2 s_2 = ${fmt(r.h)}`);
+
+    // 2️⃣ Matriu M
+    out.push(`\\textbf{2️⃣ Matriu d’inèrcia } M(q):`);
+    out.push(`M(q)=\\begin{bmatrix}
+    I_1+I_2+m_1 r_1^2+m_2(a_1^2+r_2^2+2a_1r_2c_2) & I_2+m_2(r_2^2+a_1r_2c_2)\\\\
+    I_2+m_2(r_2^2+a_1r_2c_2) & I_2+m_2r_2^2
+    \\end{bmatrix}`);
+    out.push(`\\Rightarrow M(q)=\\begin{bmatrix}
+    ${fmt(r.M[0][0])} & ${fmt(r.M[0][1])}\\\\
+    ${fmt(r.M[1][0])} & ${fmt(r.M[1][1])}
+    \\end{bmatrix}`);
+
+    // 3️⃣ Matriu C
+    out.push(`\\textbf{3️⃣ Matriu de Coriolis } C(q,\\dot q):`);
+    out.push(`C(q,\\dot q)=\\begin{bmatrix}
+      h\\dot q_2 & h(\\dot q_1+\\dot q_2)\\\\
+      -h\\dot q_1 & 0
+    \\end{bmatrix}`);
+    out.push(`\\Rightarrow C(q,\\dot q)=\\begin{bmatrix}
+      ${fmt(r.C[0][0])} & ${fmt(r.C[0][1])}\\\\
+      ${fmt(r.C[1][0])} & ${fmt(r.C[1][1])}
+    \\end{bmatrix}`);
+
+    // 4️⃣ Vector gravetat
+    out.push(`\\textbf{4️⃣ Vector de gravetat } g(q):`);
+    out.push(`g(q)=\\begin{bmatrix}
+      (m_1r_1+m_2a_1)g\\cos q_1+m_2r_2g\\cos(q_1+q_2)\\\\
+      m_2r_2g\\cos(q_1+q_2)
+    \\end{bmatrix}
+    =\\begin{bmatrix}
+      ${fmt(r.G[0])}\\\\${fmt(r.G[1])}
+    \\end{bmatrix}`);
+
+    // 5️⃣ Producte M * qdd
+    out.push(`\\textbf{5️⃣ Multiplicació } M\\ddot q:`);
+    out.push(`\\begin{bmatrix}
+      ${fmt(r.M[0][0])} & ${fmt(r.M[0][1])}\\\\
+      ${fmt(r.M[1][0])} & ${fmt(r.M[1][1])}
+    \\end{bmatrix}
+    \\begin{bmatrix}${p.q1_ddot}\\\\${p.q2_ddot}\\end{bmatrix}
+    =\\begin{bmatrix}
+      ${fmt(r.M[0][0])}(${p.q1_ddot})+${fmt(r.M[0][1])}(${p.q2_ddot})\\\\
+      ${fmt(r.M[1][0])}(${p.q1_ddot})+${fmt(r.M[1][1])}(${p.q2_ddot})
+    \\end{bmatrix}
+    =\\begin{bmatrix}${fmt(r.Mqdd[0])}\\\\${fmt(r.Mqdd[1])}\\end{bmatrix}`);
+
+    // 6️⃣ Producte C * qdot
+    out.push(`\\textbf{6️⃣ Multiplicació } C\\dot q:`);
+    out.push(`\\begin{bmatrix}
+      ${fmt(r.C[0][0])} & ${fmt(r.C[0][1])}\\\\
+      ${fmt(r.C[1][0])} & ${fmt(r.C[1][1])}
+    \\end{bmatrix}
+    \\begin{bmatrix}${p.q1_dot}\\\\${p.q2_dot}\\end{bmatrix}
+    =\\begin{bmatrix}
+      ${fmt(r.C[0][0])}(${p.q1_dot})+${fmt(r.C[0][1])}(${p.q2_dot})\\\\
+      ${fmt(r.C[1][0])}(${p.q1_dot})+${fmt(r.C[1][1])}(${p.q2_dot})
+    \\end{bmatrix}
+    =\\begin{bmatrix}${fmt(r.Cqdot[0])}\\\\${fmt(r.Cqdot[1])}\\end{bmatrix}`);
+
+    // 7️⃣ Càlcul final τ
+    out.push(`\\textbf{7️⃣ Vector de moments de forces } \\tau:`);
+    out.push(`\\tau = M\\ddot q + C\\dot q + g =
+    \\begin{bmatrix}${fmt(r.Mqdd[0])}\\\\${fmt(r.Mqdd[1])}\\end{bmatrix}+
+    \\begin{bmatrix}${fmt(r.Cqdot[0])}\\\\${fmt(r.Cqdot[1])}\\end{bmatrix}+
+    \\begin{bmatrix}${fmt(r.G[0])}\\\\${fmt(r.G[1])}\\end{bmatrix}
+    =\\begin{bmatrix}${fmt(r.tau[0])}\\\\${fmt(r.tau[1])}\\end{bmatrix}\\text{ N·m}`);
+
+    // 8️⃣ Taula final
+    out.push(`\\textbf{8️⃣ Resum numèric final:}`);
+    out.push(`
+      \\begin{array}{c|c}
+      \\text{M} & 
+      \\begin{bmatrix}
+      ${fmt(r.M[0][0])} & ${fmt(r.M[0][1])}\\\\
+      ${fmt(r.M[1][0])} & ${fmt(r.M[1][1])}
+      \\end{bmatrix}\\\\\\hline
+      \\text{C} &
+      \\begin{bmatrix}
+      ${fmt(r.C[0][0])} & ${fmt(r.C[0][1])}\\\\
+      ${fmt(r.C[1][0])} & ${fmt(r.C[1][1])}
+      \\end{bmatrix}\\\\\\hline
+      \\text{g} & [${fmt(r.G[0])},\\ ${fmt(r.G[1])}]\\\\\\hline
+      \\tau & [${fmt(r.tau[0])},\\ ${fmt(r.tau[1])}]\\text{ N·m}
+      \\end{array}
+    `);
+
+    // Renderitzat
+    await renderLatex('results', out.map(x=>`$$${x}$$`).join('<br>'));
+  });
+  document.getElementById('resetBtn').addEventListener('click',()=>location.reload());
+</script> 
+</body>
+</html>
