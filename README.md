@@ -1,1 +1,1 @@
-Robòtica amb Jacobians emprant simulacions amb JavaScript i Python amb execució amb braç robòtic Arduino Braccio
+Robòtica amb Jacobians per cinemàtica robòtica, matrius d'inèrcia, Coriolis i gravetat per dinàmica robòtica i per últim equacions de tercer grau i derivades per trajectòries de robòtica. Tot per fer simulacions amb JavaScript i Python amb execució amb braç robòtic Arduino Braccio.
