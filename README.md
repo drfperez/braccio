@@ -1,2 +1,3 @@
 Robòtica amb Jacobians per cinemàtica robòtica, matrius d'inèrcia, Coriolis i gravetat per dinàmica robòtica i per últim equacions de tercer grau i derivades per trajectòries de robòtica. Tot per fer simulacions amb JavaScript i Python amb execució amb braç robòtic Arduino Braccio. 
+
 Servidor node.js amb johnny-five.js i socket.io com backend i també html i webserial com frontend per executar trajectòries i altres accions amb Arduino Braccio.
