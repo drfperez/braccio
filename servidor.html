@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <title>🦾 Braccio Híbrid Educatiu</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f9fafc; margin: 0; padding: 20px; }
+    h1 { color: #0d47a1; }
+    canvas { background: #fff; border: 1px solid #ccc; margin-top: 15px; border-radius: 10px; }
+    .slider { width: 300px; margin: 10px; }
+    #feedback { margin-top: 15px; color: #333; }
+    button { padding: 10px 18px; border: none; background: #1565c0; color: white; border-radius: 8px; cursor: pointer; margin: 6px; }
+    button:hover { background: #0d47a1; }
+
+    /* Modal estil */
+    .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: white; margin: 5% auto; padding: 20px; border-radius: 12px;
+      width: 80%; max-width: 650px; text-align: left; overflow-y: auto; max-height: 80vh;
+    }
+    .close { float: right; font-size: 22px; cursor: pointer; color: #888; }
+    .close:hover { color: #000; }
+    ol, ul { line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>🦾 Braccio Web + Node.js (Johnny-Five)</h1>
+  <p>Controla, grava i reprodueix moviments en temps real.</p>
+
+  <button id="helpBtn">📘 Tutorial</button>
+  <button id="practiceBtn">🧪 Pràctica guiada</button>
+
+  <br><br>
+  <label>Articulació 1: <span id="val1">90</span>°</label><br>
+  <input type="range" id="s1" min="0" max="180" value="90" class="slider"><br>
+
+  <label>Articulació 2: <span id="val2">90</span>°</label><br>
+  <input type="range" id="s2" min="0" max="180" value="90" class="slider"><br>
+
+  <canvas id="sim" width="400" height="300"></canvas>
+
+  <div>
+    <button id="recordBtn" style="background:#43a047;">🔴 Grava</button>
+    <button id="stopBtn" style="background:#f44336;">⏹ Atura</button>
+    <button id="playBtn" style="background:#ff9800;">▶️ Reprodueix</button>
+  </div>
+
+  <p id="feedback">Esperant connexió...</p>
+
+  <!-- MODAL: Tutorial teòric -->
+  <div id="tutorialModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>📘 Tutorial: Arquitectura Híbrid Web + Johnny-Five</h2>
+      <ul>
+        <li><b>Frontend Web:</b> Mou els sliders, observa la simulació i envia angles.</li>
+        <li><b>Backend Node.js:</b> Controla el Braccio físic amb <b>Johnny-Five</b>.</li>
+        <li><b>Socket.io:</b> Connecta el navegador i el servidor en temps real.</li>
+      </ul>
+      <ol>
+        <li>Carrega <b>StandardFirmata</b> a l’Arduino.</li>
+        <li>Executa <code>node server.js</code>.</li>
+        <li>Obre <b>http://localhost:3000</b>.</li>
+        <li>Usa els sliders per moure el Braccio i el simulador.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- MODAL: Pràctica guiada -->
+  <div id="practiceModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>🧪 Pràctica guiada: Moviment del Braccio</h2>
+      <ol>
+        <li><b>Fase 1 – Control manual:</b> Mou els sliders i observa com el Braccio segueix la simulació.</li>
+        <li><b>Fase 2 – Gravació:</b> Prem <b>🔴 Grava</b> mentre mous els sliders per capturar una trajectòria.</li>
+        <li><b>Fase 3 – Reproducció:</b> Prem <b>▶️ Reprodueix</b> per fer que el Braccio repeteixi el moviment.</li>
+        <li><b>Fase 4 – Reflexió:</b> Observa com la seqüència enviada és la mateixa que vas generar.</li>
+      </ol>
+      <p><b>Objectiu:</b> entendre el bucle de control humà-robot i la sincronització de moviment real i virtual.</p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const ctx = document.getElementById("sim").getContext("2d");
+    const l1 = 100, l2 = 80;
+    let q1 = 90, q2 = 90;
+    let recording = false, trajectoria = [];
+
+    function dibuixa() {
+      ctx.clearRect(0, 0, 400, 300);
+      ctx.save();
+      ctx.translate(200, 200);
+      ctx.strokeStyle = "#0d47a1";
+      ctx.lineWidth = 4;
+
+      const r1 = q1 * Math.PI / 180;
+      const r2 = q2 * Math.PI / 180;
+      const x1 = l1 * Math.cos(r1);
+      const y1 = l1 * Math.sin(r1);
+      const x2 = x1 + l2 * Math.cos(r1 + r2);
+      const y2 = y1 + l2 * Math.sin(r1 + r2);
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      ctx.restore();
+      requestAnimationFrame(dibuixa);
+    }
+    dibuixa();
+
+    document.getElementById("s1").oninput = e => { q1 = +e.target.value; document.getElementById("val1").innerText = q1; envia(); };
+    document.getElementById("s2").oninput = e => { q2 = +e.target.value; document.getElementById("val2").innerText = q2; envia(); };
+
+    function envia() {
+      socket.emit("angles", { q1, q2 });
+      if (recording) trajectoria.push({ q1, q2 });
+    }
+
+    socket.on("feedback", d => {
+      document.getElementById("feedback").innerText =
+        `q1=${d.q1}°, q2=${d.q2}° (${new Date(d.time).toLocaleTimeString()})`;
+    });
+    socket.on("status", msg => document.getElementById("feedback").innerText = msg);
+
+    // Gravació i reproducció
+    document.getElementById("recordBtn").onclick = () => {
+      trajectoria = [];
+      recording = true;
+      document.getElementById("feedback").innerText = "🎥 Gravant trajectòria...";
+    };
+    document.getElementById("stopBtn").onclick = () => {
+      recording = false;
+      document.getElementById("feedback").innerText = `📁 Gravats ${trajectoria.length} punts.`;
+    };
+    document.getElementById("playBtn").onclick = () => {
+      if (trajectoria.length > 0) {
+        socket.emit("reprodueixTrajectoria", trajectoria);
+        document.getElementById("feedback").innerText = "▶️ Reproduint trajectòria...";
+      }
+    };
+
+    // Modals
+    const modals = document.querySelectorAll(".modal");
+    document.getElementById("helpBtn").onclick = () => modals[0].style.display = "block";
+    document.getElementById("practiceBtn").onclick = () => modals[1].style.display = "block";
+    document.querySelectorAll(".close").forEach((c, i) =>
+      c.onclick = () => modals[i].style.display = "none"
+    );
+    window.onclick = e => { if (modals[0].contains(e.target)) modals[0].style.display = "none";
+                            if (modals[1].contains(e.target)) modals[1].style.display = "none"; };
+  </script>
+</body>
+    </html>
+    
